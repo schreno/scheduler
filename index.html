@@ -2,8 +2,14 @@
 <html lang="en" class="dark h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Academic Planner & Task Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Academic Task Hub</title>
+  
+  <!-- iPhone / iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Academic Hub">
+  <link rel="manifest" href="manifest.json">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -32,83 +38,65 @@
       }
     }
   </script>
+
+  <!-- Firebase SDK Setup -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // REPLACE THIS WITH YOUR FIREBASE CONFIG FROM STEP 2
+    const firebaseConfig = {
+      apiKey: "AIzaSyBG-1Pyl_oEQi-fVN6OkM6_o89nIXOjnf8",
+      authDomain: "academichub-fc0ac.firebaseapp.com",
+      projectId: "academichub-fc0ac",
+      storageBucket: "academichub-fc0ac.firebasestorage.app",
+      messagingSenderId: "1018535938370",
+      appId: "1:1018535938370:web:dacd6827a2cdc37a2960db",
+      measurementId: "G-R11LDZB6FJ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.db = db;
+    window.fsFns = { collection, doc, setDoc, deleteDoc, onSnapshot };
+
+    // Realtime Listener across iPhone & PC
+    onSnapshot(collection(db, "tasks"), (snapshot) => {
+      tasks = snapshot.docs.map(doc => doc.data());
+      renderCalendar();
+      applyFilters();
+      updateProgressStats();
+      checkUrgentTasks();
+    });
+  </script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(156, 163, 175, 0.3);
-      border-radius: 9999px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(156, 163, 175, 0.6);
-    }
-
-    /* Custom styled native select inputs */
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 9999px; }
     select.custom-select {
       appearance: none;
       -webkit-appearance: none;
-      -moz-appearance: none;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
       background-repeat: no-repeat;
       background-position: right 0.5rem center;
       background-size: 1rem;
       padding-right: 1.8rem !important;
     }
-    select.custom-select:focus {
-      outline: none;
-    }
-
-    /* Animations */
-    @keyframes modalPopIn {
-      0% {
-        opacity: 0;
-        transform: scale(0.95) translateY(8px);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
-
-    @keyframes dropdownFadeIn {
-      0% {
-        opacity: 0;
-        transform: translateY(-6px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .animate-modal {
-      animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .animate-dropdown {
-      animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .drag-over-task {
-      border-color: #3b82f6 !important;
-      background-color: rgba(30, 58, 138, 0.3) !important;
-      transform: scale(1.01);
-    }
+    select.custom-select:focus { outline: none; }
+    @keyframes modalPopIn { 0% { opacity: 0; transform: scale(0.95) translateY(8px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes dropdownFadeIn { 0% { opacity: 0; transform: translateY(-6px); } 100% { opacity: 1; transform: translateY(0); } }
+    .animate-modal { animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-dropdown { animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .drag-over-task { border-color: #3b82f6 !important; background-color: rgba(30, 58, 138, 0.3) !important; transform: scale(1.01); }
   </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-100 antialiased selection:bg-blue-500 selection:text-white flex flex-col custom-scrollbar relative">
 
-  <!-- Drag-and-Drop Overlay for Backup Import -->
+  <!-- Drag Overlay for JSON Import -->
   <div id="drag-overlay" class="hidden fixed inset-0 z-50 bg-blue-950/80 backdrop-blur-md border-4 border-dashed border-blue-500 flex flex-col items-center justify-center pointer-events-none transition-all">
     <div class="p-4 bg-blue-600 text-white rounded-full shadow-2xl mb-4 animate-bounce">
       <i data-lucide="upload-cloud" class="w-12 h-12"></i>
@@ -119,22 +107,17 @@
 
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
-      
-      <!-- Logo & Academic Year Indicator -->
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-blue-500/20">
           <i data-lucide="graduation-cap" class="w-5 h-5 sm:w-6 sm:h-6"></i>
         </div>
         <div>
           <h1 class="font-bold text-sm sm:text-lg text-white leading-tight">Academic Task Hub</h1>
-          <p class="text-[10px] sm:text-xs text-slate-400">Year-Round Academic Planner & Syllabus</p>
+          <p class="text-[10px] sm:text-xs text-slate-400">Cloud Sync Active</p>
         </div>
       </div>
 
-      <!-- Action Buttons & Monthly Progress Stats -->
       <div class="flex items-center space-x-2 sm:space-x-3">
-        
-        <!-- Monthly Progress Meter -->
         <div class="hidden lg:flex items-center space-x-3 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60">
           <div class="text-right">
             <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Month Progress</div>
@@ -145,19 +128,16 @@
           </div>
         </div>
 
-        <!-- New Task Button -->
         <button onclick="openTaskModal()" class="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition-all active:scale-95">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span class="hidden sm:inline">Add Task</span>
         </button>
 
-        <!-- Rules Reference Toggle -->
         <button onclick="toggleRulesModal()" class="flex items-center space-x-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition-all active:scale-95">
           <i data-lucide="book-open" class="w-4 h-4 text-amber-400"></i>
           <span class="hidden md:inline">Course Directives</span>
         </button>
 
-        <!-- Backup & Tools Menu -->
         <div class="relative">
           <button onclick="toggleDataMenu()" id="data-menu-btn" class="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-xl transition-all border border-slate-800 active:scale-95">
             <i data-lucide="more-vertical" class="w-5 h-5"></i>
@@ -176,11 +156,10 @@
             <div class="my-1 border-t border-slate-700/60"></div>
             <button onclick="clearAllData()" class="w-full text-left px-4 py-2 text-rose-400 hover:bg-rose-500/10 flex items-center space-x-2 transition-colors">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span>Clear All Data</span>
+              <span>Clear All Cloud Data</span>
             </button>
           </div>
         </div>
-
       </div>
     </div>
   </header>
@@ -199,13 +178,9 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <!-- LEFT COLUMN: CALENDAR GRID & CONTROLS (lg:col-span-5) -->
+    <!-- Calendar View -->
     <div class="lg:col-span-5 flex flex-col space-y-6">
-      
-      <!-- Dynamic Multi-Month Calendar Card -->
       <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-sm">
-        
-        <!-- Month Navigation Controls -->
         <div class="flex items-center justify-between mb-4 gap-1">
           <div class="flex items-center space-x-1 sm:space-x-2">
             <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 transition-all active:scale-95">
@@ -251,24 +226,18 @@
           </div>
         </div>
 
-        <!-- View Mode Switches (Month / Week / Agenda) -->
         <div class="flex bg-slate-950 border border-slate-800 p-1 rounded-xl text-xs font-semibold text-slate-400 mb-3">
           <button onclick="setViewMode('month')" id="btn-view-month" class="flex-1 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all">Month Grid</button>
           <button onclick="setViewMode('week')" id="btn-view-week" class="flex-1 py-1 rounded-lg hover:text-slate-200 transition-all">Week View</button>
           <button onclick="setViewMode('agenda')" id="btn-view-agenda" class="flex-1 py-1 rounded-lg hover:text-slate-200 transition-all">Agenda</button>
         </div>
 
-        <!-- Weekday Headers -->
         <div id="weekday-headers" class="grid grid-cols-7 gap-1 text-center font-bold text-[11px] text-slate-500 mb-2 uppercase tracking-wider">
           <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
         </div>
 
-        <!-- Calendar Days Container -->
-        <div id="calendar-grid" class="grid grid-cols-7 gap-1.5 text-xs min-h-[220px]">
-          <!-- Calendar cells rendered via JavaScript -->
-        </div>
+        <div id="calendar-grid" class="grid grid-cols-7 gap-1.5 text-xs min-h-[220px]"></div>
 
-        <!-- Dot Legend -->
         <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap gap-3 text-[10px] sm:text-[11px] text-slate-400">
           <div class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Exam</span></div>
           <div class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Quiz</span></div>
@@ -276,10 +245,8 @@
           <div class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span>Lab/Plate</span></div>
           <div class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-cyan-500"></span><span>Event</span></div>
         </div>
-
       </div>
 
-      <!-- Quick Section Directives Card -->
       <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-sm space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
@@ -313,16 +280,11 @@
           </div>
         </div>
       </div>
-
     </div>
 
-    <!-- RIGHT COLUMN: SEARCH, FILTERS, TASKS LIST (lg:col-span-7) -->
+    <!-- Right Side Feed -->
     <div class="lg:col-span-7 flex flex-col space-y-4">
-      
-      <!-- Search and Multi-filter Control Panel -->
       <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 shadow-xl backdrop-blur-sm space-y-3">
-        
-        <!-- Search Input & Status Filter Tabs -->
         <div class="flex flex-col sm:flex-row gap-3">
           <div class="relative flex-1">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
@@ -337,13 +299,10 @@
           </div>
         </div>
 
-        <!-- Secondary Dropdown Filters -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <select id="filter-subject" onchange="applyFilters()" class="custom-select bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-2.5 py-1.5 outline-none focus:border-blue-500 cursor-pointer transition-all">
             <option value="all">All Courses</option>
-            <!-- Populated via JS -->
           </select>
-
           <select id="filter-category" onchange="applyFilters()" class="custom-select bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-2.5 py-1.5 outline-none focus:border-blue-500 cursor-pointer transition-all">
             <option value="all">All Categories</option>
             <option value="exam">Exams</option>
@@ -353,14 +312,12 @@
             <option value="event">Presentations / Events</option>
             <option value="tba">Pending / TBA</option>
           </select>
-
           <select id="filter-priority" onchange="applyFilters()" class="custom-select bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-2.5 py-1.5 outline-none focus:border-blue-500 cursor-pointer transition-all">
             <option value="all">All Priorities</option>
             <option value="high">High Priority</option>
             <option value="medium">Medium Priority</option>
             <option value="low">Low Priority</option>
           </select>
-
           <select id="filter-section" onchange="applyFilters()" class="custom-select bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-2.5 py-1.5 outline-none focus:border-blue-500 cursor-pointer transition-all">
             <option value="all">All Sections</option>
             <option value="1A">Section 1A</option>
@@ -368,33 +325,25 @@
             <option value="General">General / All</option>
           </select>
         </div>
-
       </div>
 
-      <!-- Task Feed Header -->
       <div class="flex items-center justify-between px-1">
         <div>
           <h2 id="view-title" class="text-sm font-bold text-slate-200">Academic Schedule Feed</h2>
-          <p id="view-subtitle" class="text-xs text-slate-400">Drag files onto any task card to add learning materials</p>
+          <p id="view-subtitle" class="text-xs text-slate-400">Real-time sync enabled</p>
         </div>
         <span id="task-count-badge" class="px-2.5 py-1 bg-blue-500/10 text-blue-400 font-bold text-xs rounded-full border border-blue-500/20">
           0 Tasks
         </span>
       </div>
 
-      <!-- Task Cards Feed Container -->
-      <div id="tasks-container" class="space-y-3 overflow-y-auto max-h-[640px] pr-1 custom-scrollbar">
-        <!-- Task cards rendered via JavaScript -->
-      </div>
-
+      <div id="tasks-container" class="space-y-3 overflow-y-auto max-h-[640px] pr-1 custom-scrollbar"></div>
     </div>
-
   </main>
 
   <!-- ADD / EDIT TASK MODAL -->
   <div id="task-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
     <div id="task-modal-card" class="animate-modal bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
-      
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <h3 id="modal-title" class="font-bold text-base text-white">Add New Academic Task</h3>
         <button onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-200 transition-colors">
@@ -404,7 +353,6 @@
 
       <form id="task-form" onsubmit="handleFormSubmit(event)" class="space-y-3 text-xs">
         <input type="hidden" id="form-task-id">
-
         <div>
           <label class="block font-semibold text-slate-300 mb-1">Task Title / Deliverable Name *</label>
           <input type="text" id="form-title" required placeholder="e.g. Midterm Exam, Plate #2, Lab Report" 
@@ -446,16 +394,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Due Date</label>
-            <input type="date" id="form-date"
-                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none transition-all">
+            <input type="date" id="form-date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none transition-all">
           </div>
-
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Time / Venue</label>
-            <input type="text" id="form-time" placeholder="e.g. 1:00 PM, Online"
-                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none transition-all">
+            <input type="text" id="form-time" placeholder="e.g. 1:00 PM, Online" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none transition-all">
           </div>
-
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Section</label>
             <select id="form-section" class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer transition-all">
@@ -491,9 +435,8 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">Attach Learning Materials (Images, PDFs, Word, Docs)</label>
+          <label class="block font-semibold text-slate-300 mb-1">Attach Learning Materials (Images, PDFs, Word)</label>
           <input type="file" id="form-files" multiple class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-400 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition-all cursor-pointer">
-          <p class="text-[10px] text-slate-500 mt-1">You can also drop files directly onto any task card in the feed.</p>
         </div>
 
         <div class="pt-3 flex items-center justify-end space-x-2 border-t border-slate-800">
@@ -501,40 +444,29 @@
           <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition-all active:scale-95">Save Task</button>
         </div>
       </form>
-
     </div>
   </div>
 
-  <!-- MAXIMIZED TASK / LEARNING MATERIALS MODAL -->
+  <!-- MAXIMIZED TASK MODAL -->
   <div id="max-task-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 transition-opacity">
     <div class="animate-modal bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-      
-      <!-- Modal Header -->
       <div class="p-4 sm:p-5 border-b border-slate-800 flex items-start justify-between bg-slate-900/90 shrink-0">
         <div class="space-y-1.5 min-w-0 pr-4">
-          <div class="flex flex-wrap items-center gap-2" id="max-task-badges">
-            <!-- Badges rendered via JS -->
-          </div>
+          <div class="flex flex-wrap items-center gap-2" id="max-task-badges"></div>
           <h2 id="max-task-title" class="text-base sm:text-xl font-bold text-white truncate">Task Title</h2>
-          <p id="max-task-meta" class="text-xs text-slate-400 flex items-center space-x-2">
-            <!-- Meta text via JS -->
-          </p>
+          <p id="max-task-meta" class="text-xs text-slate-400 flex items-center space-x-2"></p>
         </div>
         <button onclick="closeMaxTaskModal()" class="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors shrink-0">
           <i data-lucide="x" class="w-6 h-6"></i>
         </button>
       </div>
 
-      <!-- Modal Body -->
       <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar bg-slate-950/40">
-        
-        <!-- Notes / Instructions -->
         <div id="max-task-notes-container" class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-1">
           <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">Instructions & Notes</span>
           <p id="max-task-notes" class="text-xs sm:text-sm text-slate-300 whitespace-pre-wrap">No notes provided.</p>
         </div>
 
-        <!-- Learning Materials Section -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
@@ -549,37 +481,25 @@
             </label>
           </div>
 
-          <!-- Drop Area inside Maximized View -->
           <div id="max-drop-zone" ondragover="handleMaxDragOver(event)" ondragleave="handleMaxDragLeave(event)" ondrop="handleMaxDrop(event)"
                class="p-4 border-2 border-dashed border-slate-800 rounded-xl text-center text-xs text-slate-500 hover:border-blue-500/50 transition-colors">
             Drag and drop images, PDFs, Word docs, or other files here to add them to this task.
           </div>
 
-          <!-- Materials Display Grid / List -->
-          <div id="max-task-materials" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Files rendered dynamically -->
-          </div>
+          <div id="max-task-materials" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
-
       </div>
 
-      <!-- Modal Footer -->
       <div class="p-4 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between text-xs shrink-0">
-        <button id="max-complete-btn" onclick="toggleMaximizedTaskCompletion()" class="px-4 py-2 rounded-xl font-bold transition-all flex items-center space-x-1.5">
-          <!-- Button content via JS -->
-        </button>
-        <button onclick="closeMaxTaskModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl transition-all">
-          Done
-        </button>
+        <button id="max-complete-btn" onclick="toggleMaximizedTaskCompletion()" class="px-4 py-2 rounded-xl font-bold transition-all flex items-center space-x-1.5"></button>
+        <button onclick="closeMaxTaskModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl transition-all">Done</button>
       </div>
-
     </div>
   </div>
 
-  <!-- COURSE DIRECTIVES MODAL -->
+  <!-- RULES MODAL -->
   <div id="rules-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
     <div id="rules-modal-card" class="animate-modal bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
-      
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <h3 class="font-bold text-base text-white flex items-center space-x-2">
           <i data-lucide="book-open" class="w-5 h-5 text-amber-400"></i>
@@ -619,12 +539,10 @@
       <div class="pt-2 text-right">
         <button onclick="toggleRulesModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition-all">Close Reference Sheet</button>
       </div>
-
     </div>
   </div>
 
   <script>
-    // Style Mappings
     const SUBJECT_STYLES = {
       'Chemistry for Engineers (Lec)': { color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-500' },
       'Differential Calculus': { color: 'bg-blue-500/10 text-blue-400 border-blue-500/30', dot: 'bg-blue-500' },
@@ -638,27 +556,20 @@
       'Pathfit': { color: 'bg-teal-500/10 text-teal-400 border-teal-500/30', dot: 'bg-teal-500' }
     };
 
-    // Application State
     let tasks = [];
     let currentYear = 2026;
-    let currentMonth = 9; // October (0-indexed)
+    let currentMonth = 9;
     let selectedDateFilter = null;
-    let statusFilter = 'all'; // 'all' | 'active' | 'completed'
-    let currentViewMode = 'month'; // 'month' | 'week' | 'agenda'
+    let statusFilter = 'all';
+    let currentViewMode = 'month';
     let activeMaximizedTaskId = null;
 
-    // Initialization
     document.addEventListener('DOMContentLoaded', () => {
-      loadTasks();
       populateSubjectDropdowns();
       syncMonthYearSelectors();
-      renderCalendar();
-      applyFilters();
-      checkUrgentTasks();
       setupGlobalDragAndDrop();
       lucide.createIcons();
 
-      // Data menu outside click closer
       document.addEventListener('click', (e) => {
         const menu = document.getElementById('data-dropdown');
         const btn = document.getElementById('data-menu-btn');
@@ -668,13 +579,24 @@
       });
     });
 
+    function saveTaskToFirestore(task) {
+      if (!window.db) return;
+      const { doc, setDoc } = window.fsFns;
+      setDoc(doc(window.db, "tasks", task.id), task);
+    }
+
+    function deleteTaskFromFirestore(taskId) {
+      if (!window.db) return;
+      const { doc, deleteDoc } = window.fsFns;
+      deleteDoc(doc(window.db, "tasks", taskId));
+    }
+
     function setupGlobalDragAndDrop() {
       const dragOverlay = document.getElementById('drag-overlay');
       let dragCounter = 0;
 
       window.addEventListener('dragenter', (e) => {
         e.preventDefault();
-        // Ignore task card level dragging
         if (e.target.closest && e.target.closest('.task-card')) return;
         dragCounter++;
         if (dragOverlay) dragOverlay.classList.remove('hidden');
@@ -683,23 +605,18 @@
       window.addEventListener('dragleave', (e) => {
         e.preventDefault();
         dragCounter--;
-        if (dragCounter === 0 && dragOverlay) {
-          dragOverlay.classList.add('hidden');
-        }
+        if (dragCounter === 0 && dragOverlay) dragOverlay.classList.add('hidden');
       });
 
-      window.addEventListener('dragover', (e) => {
-        e.preventDefault();
-      });
+      window.addEventListener('dragover', (e) => { e.preventDefault(); });
 
       window.addEventListener('drop', (e) => {
         e.preventDefault();
         dragCounter = 0;
         if (dragOverlay) dragOverlay.classList.add('hidden');
 
-        // Check if dropped directly on a task card
         const taskCard = e.target.closest ? e.target.closest('.task-card') : null;
-        if (taskCard) return; // Handled by card event listeners
+        if (taskCard) return;
 
         const files = e.dataTransfer.files;
         if (files && files.length > 0 && files[0].name.endsWith('.json')) {
@@ -719,13 +636,9 @@
         try {
           const imported = JSON.parse(e.target.result);
           if (Array.isArray(imported)) {
-            tasks = imported;
-            saveTasks();
-            populateSubjectDropdowns();
+            imported.forEach(t => saveTaskToFirestore(t));
             confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
-            alert('Academic schedule successfully imported!');
-          } else {
-            alert('Invalid JSON file format.');
+            alert('Academic schedule successfully uploaded to cloud!');
           }
         } catch (err) {
           alert('Error parsing JSON file.');
@@ -734,32 +647,9 @@
       reader.readAsText(file);
     }
 
-    function loadTasks() {
-      const stored = localStorage.getItem('academic_planner_tasks_v3');
-      if (stored) {
-        try {
-          tasks = JSON.parse(stored);
-        } catch (e) {
-          tasks = [];
-        }
-      } else {
-        tasks = [];
-      }
-    }
-
-    function saveTasks() {
-      localStorage.setItem('academic_planner_tasks_v3', JSON.stringify(tasks));
-      renderCalendar();
-      applyFilters();
-      updateProgressStats();
-      checkUrgentTasks();
-    }
-
     function clearAllData() {
-      if (confirm('Are you sure you want to clear all schedule items?')) {
-        tasks = [];
-        saveTasks();
-        populateSubjectDropdowns();
+      if (confirm('Are you sure you want to clear all cloud schedule items?')) {
+        tasks.forEach(t => deleteTaskFromFirestore(t.id));
       }
     }
 
@@ -779,23 +669,15 @@
       processJsonFile(file);
     }
 
-    function toggleDataMenu() {
-      document.getElementById('data-dropdown').classList.toggle('hidden');
-    }
-
-    function toggleRulesModal() {
-      document.getElementById('rules-modal').classList.toggle('hidden');
-    }
+    function toggleDataMenu() { document.getElementById('data-dropdown').classList.toggle('hidden'); }
+    function toggleRulesModal() { document.getElementById('rules-modal').classList.toggle('hidden'); }
 
     function populateSubjectDropdowns() {
       const select = document.getElementById('filter-subject');
       const subjects = Array.from(new Set(tasks.map(t => t.subject))).filter(Boolean).sort();
-      
-      select.innerHTML = '<option value="all">All Courses</option>' + 
-        subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+      select.innerHTML = '<option value="all">All Courses</option>' + subjects.map(s => `<option value="${s}">${s}</option>`).join('');
     }
 
-    // Month & Navigation Controls
     function syncMonthYearSelectors() {
       document.getElementById('cal-month-select').value = currentMonth;
       document.getElementById('cal-year-select').value = currentYear;
@@ -803,13 +685,8 @@
 
     function changeMonth(delta) {
       currentMonth += delta;
-      if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-      } else if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-      }
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
       syncMonthYearSelectors();
       renderCalendar();
       applyFilters();
@@ -823,7 +700,7 @@
     }
 
     function goToToday() {
-      currentMonth = 9; // October 2026 relative default
+      currentMonth = 9;
       currentYear = 2026;
       selectedDateFilter = null;
       document.getElementById('clear-date-filter').classList.add('hidden');
@@ -836,11 +713,7 @@
       currentViewMode = mode;
       ['month', 'week', 'agenda'].forEach(m => {
         const btn = document.getElementById(`btn-view-${m}`);
-        if (m === mode) {
-          btn.className = 'flex-1 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all';
-        } else {
-          btn.className = 'flex-1 py-1 rounded-lg hover:text-slate-200 transition-all';
-        }
+        btn.className = m === mode ? 'flex-1 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all' : 'flex-1 py-1 rounded-lg hover:text-slate-200 transition-all';
       });
       renderCalendar();
     }
@@ -849,11 +722,7 @@
       statusFilter = status;
       ['all', 'active', 'completed'].forEach(s => {
         const btn = document.getElementById(`filter-status-${s}`);
-        if (s === status) {
-          btn.className = 'flex-1 px-3 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all';
-        } else {
-          btn.className = 'flex-1 px-3 py-1 rounded-lg hover:text-slate-200 transition-all';
-        }
+        btn.className = s === status ? 'flex-1 px-3 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all' : 'flex-1 px-3 py-1 rounded-lg hover:text-slate-200 transition-all';
       });
       applyFilters();
     }
@@ -865,177 +734,86 @@
       applyFilters();
     }
 
-    // Dynamic Calendar Renderer
     function renderCalendar() {
-  const grid = document.getElementById('calendar-grid');
-  grid.innerHTML = '';
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
 
-  if (currentViewMode === 'agenda') {
-    grid.className = 'flex flex-col space-y-2 text-xs min-h-[220px]';
-    renderAgendaView(grid);
-    return;
-  }
+      if (currentViewMode === 'agenda') {
+        grid.className = 'flex flex-col space-y-2 text-xs min-h-[220px]';
+        renderAgendaView(grid);
+        return;
+      }
 
-  grid.className = 'grid grid-cols-7 gap-1.5 text-xs min-h-[220px]';
+      grid.className = 'grid grid-cols-7 gap-1.5 text-xs min-h-[220px]';
 
-  // Determine date range to render
-  let startDay, endDay;
+      if (currentViewMode === 'week') {
+        let baseDate = selectedDateFilter ? new Date(selectedDateFilter) : new Date(currentYear, currentMonth, 1);
+        let dayOfWeek = baseDate.getDay();
+        let weekStart = new Date(baseDate);
+        weekStart.setDate(baseDate.getDate() - dayOfWeek);
+        let weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
 
-  if (currentViewMode === 'week') {
-    // If a date is selected, show its week; otherwise, show the first week of the current month
-    let baseDate = selectedDateFilter ? new Date(selectedDateFilter) : new Date(currentYear, currentMonth, 1);
-    let dayOfWeek = baseDate.getDay();
-    
-    // Calculate Sunday (start of week) and Saturday (end of week)
-    let weekStart = new Date(baseDate);
-    weekStart.setDate(baseDate.getDate() - dayOfWeek);
-    
-    let weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+        for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
+          const year = d.getFullYear();
+          const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
+          const dayStr = d.getDate().toString().padStart(2, '0');
+          renderCalendarCell(grid, d.getDate(), `${year}-${monthStr}-${dayStr}`, d.getMonth() === currentMonth);
+        }
+      } else {
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-    // Render 7 days for the selected week
-    for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
-      const year = d.getFullYear();
-      const monthStr = (d.getMonth() + 1).toString().padStart(2, '0');
-      const dayStr = d.getDate().toString().padStart(2, '0');
-      const dateStr = `${year}-${monthStr}-${dayStr}`;
+        for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+          grid.innerHTML += `<div class="h-16 sm:h-20 p-1 bg-slate-950/40 border border-slate-900/60 rounded-xl opacity-25 cursor-not-allowed"><span class="text-[10px] text-slate-500 font-bold">${daysInPrevMonth - i}</span></div>`;
+        }
 
-      renderCalendarCell(grid, d.getDate(), dateStr, d.getMonth() === currentMonth);
+        for (let day = 1; day <= daysInMonth; day++) {
+          const monthStr = (currentMonth + 1).toString().padStart(2, '0');
+          const dayStr = day.toString().padStart(2, '0');
+          renderCalendarCell(grid, day, `${currentYear}-${monthStr}-${dayStr}`, true);
+        }
+      }
+      lucide.createIcons();
     }
-  } else {
-    // Standard Month View Grid
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-    // Prev Month Padding Cells
-    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-      const dayNum = daysInPrevMonth - i;
+    function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
+      const dayTasks = tasks.filter(t => t.date === dateStr);
+      const isSelected = selectedDateFilter === dateStr;
+      const hasTasks = dayTasks.length > 0;
+
+      let dotsHTML = '';
+      dayTasks.slice(0, 3).forEach(t => {
+        let dotColor = 'bg-blue-500';
+        if (t.category === 'exam') dotColor = 'bg-rose-500';
+        else if (t.category === 'quiz') dotColor = 'bg-amber-500';
+        else if (t.category === 'lab') dotColor = 'bg-purple-500';
+        else if (t.category === 'event') dotColor = 'bg-cyan-500';
+        dotsHTML += `<span class="w-1.5 h-1.5 rounded-full ${dotColor} ${t.completed ? 'opacity-30' : ''}"></span>`;
+      });
+
+      if (dayTasks.length > 3) dotsHTML += `<span class="text-[8px] text-slate-400 font-bold">+${dayTasks.length - 3}</span>`;
+
       grid.innerHTML += `
-        <div class="h-16 sm:h-20 p-1 bg-slate-950/40 border border-slate-900/60 rounded-xl opacity-25 cursor-not-allowed">
-          <span class="text-[10px] text-slate-500 font-bold">${dayNum}</span>
+        <div onclick="selectCalendarDate('${dateStr}')" 
+             class="h-16 sm:h-20 p-1.5 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-95 ${!isCurrentMonth ? 'opacity-40' : ''} ${isSelected ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-500/40 shadow-lg' : hasTasks ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-slate-950/60 border-slate-900 hover:border-slate-800'}">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold ${isSelected ? 'text-blue-400' : 'text-slate-300'}">${day}</span>
+            ${dayTasks.length > 0 && dayTasks.every(t => t.completed) ? '<i data-lucide="check" class="w-3 h-3 text-emerald-400 stroke-[3]"></i>' : ''}
+          </div>
+          <div class="flex flex-wrap items-center gap-1 my-0.5">${dotsHTML}</div>
+          <div class="text-[9px] font-semibold text-slate-500 text-right">${hasTasks ? `${dayTasks.length} task${dayTasks.length > 1 ? 's' : ''}` : ''}</div>
         </div>
       `;
     }
-
-    // Current Month Cells
-    for (let day = 1; day <= daysInMonth; day++) {
-      const monthStr = (currentMonth + 1).toString().padStart(2, '0');
-      const dayStr = day.toString().padStart(2, '0');
-      const dateStr = `${currentYear}-${monthStr}-${dayStr}`;
-
-      renderCalendarCell(grid, day, dateStr, true);
-    }
-  }
-
-  lucide.createIcons();
-}
-
-// Helper to draw individual calendar cells
-function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
-  const dayTasks = tasks.filter(t => t.date === dateStr);
-  const isSelected = selectedDateFilter === dateStr;
-  const hasTasks = dayTasks.length > 0;
-
-  let dotsHTML = '';
-  dayTasks.slice(0, 3).forEach(t => {
-    let dotColor = 'bg-blue-500';
-    if (t.category === 'exam') dotColor = 'bg-rose-500';
-    else if (t.category === 'quiz') dotColor = 'bg-amber-500';
-    else if (t.category === 'lab') dotColor = 'bg-purple-500';
-    else if (t.category === 'event') dotColor = 'bg-cyan-500';
-
-    dotsHTML += `<span class="w-1.5 h-1.5 rounded-full ${dotColor} ${t.completed ? 'opacity-30' : ''}"></span>`;
-  });
-
-  if (dayTasks.length > 3) {
-    dotsHTML += `<span class="text-[8px] text-slate-400 font-bold">+${dayTasks.length - 3}</span>`;
-  }
-
-  grid.innerHTML += `
-    <div onclick="selectCalendarDate('${dateStr}')" 
-         class="h-16 sm:h-20 p-1.5 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-95 ${
-           !isCurrentMonth ? 'opacity-40' : ''
-         } ${
-           isSelected 
-             ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-500/40 shadow-lg' 
-             : hasTasks 
-               ? 'bg-slate-900 border-slate-800 hover:border-slate-700' 
-               : 'bg-slate-950/60 border-slate-900 hover:border-slate-800'
-         }">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-bold ${isSelected ? 'text-blue-400' : 'text-slate-300'}">${day}</span>
-        ${dayTasks.length > 0 && dayTasks.every(t => t.completed) ? '<i data-lucide="check" class="w-3 h-3 text-emerald-400 stroke-[3]"></i>' : ''}
-      </div>
-      
-      <div class="flex flex-wrap items-center gap-1 my-0.5">
-        ${dotsHTML}
-      </div>
-
-      <div class="text-[9px] font-semibold text-slate-500 text-right">
-        ${hasTasks ? `${dayTasks.length} task${dayTasks.length > 1 ? 's' : ''}` : ''}
-      </div>
-    </div>
-  `;
-}
-
-function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
-  const dayTasks = tasks.filter(t => t.date === dateStr);
-  const isSelected = selectedDateFilter === dateStr;
-  const hasTasks = dayTasks.length > 0;
-
-  let dotsHTML = '';
-  dayTasks.slice(0, 3).forEach(t => {
-    let dotColor = 'bg-blue-500';
-    if (t.category === 'exam') dotColor = 'bg-rose-500';
-    else if (t.category === 'quiz') dotColor = 'bg-amber-500';
-    else if (t.category === 'lab') dotColor = 'bg-purple-500';
-    else if (t.category === 'event') dotColor = 'bg-cyan-500';
-
-    dotsHTML += `<span class="w-1.5 h-1.5 rounded-full ${dotColor} ${t.completed ? 'opacity-30' : ''}"></span>`;
-  });
-
-  if (dayTasks.length > 3) {
-    dotsHTML += `<span class="text-[8px] text-slate-400 font-bold">+${dayTasks.length - 3}</span>`;
-  }
-
-  grid.innerHTML += `
-    <div onclick="selectCalendarDate('${dateStr}')" 
-         class="h-16 sm:h-20 p-1.5 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-95 ${
-           !isCurrentMonth ? 'opacity-40' : ''
-         } ${
-           isSelected 
-             ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-500/40 shadow-lg' 
-             : hasTasks 
-               ? 'bg-slate-900 border-slate-800 hover:border-slate-700' 
-               : 'bg-slate-950/60 border-slate-900 hover:border-slate-800'
-         }">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-bold ${isSelected ? 'text-blue-400' : 'text-slate-300'}">${day}</span>
-        ${dayTasks.length > 0 && dayTasks.every(t => t.completed) ? '<i data-lucide="check" class="w-3 h-3 text-emerald-400 stroke-[3]"></i>' : ''}
-      </div>
-      
-      <div class="flex flex-wrap items-center gap-1 my-0.5">
-        ${dotsHTML}
-      </div>
-
-      <div class="text-[9px] font-semibold text-slate-500 text-right">
-        ${hasTasks ? `${dayTasks.length} task${dayTasks.length > 1 ? 's' : ''}` : ''}
-      </div>
-    </div>
-  `;
-}
 
     function renderAgendaView(container) {
       const monthPrefix = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`;
       const monthTasks = tasks.filter(t => t.date && t.date.startsWith(monthPrefix)).sort((a,b) => a.date.localeCompare(b.date));
 
       if (monthTasks.length === 0) {
-        container.innerHTML = `
-          <div class="p-6 text-center text-slate-500 text-xs">
-            No scheduled tasks recorded for this month.
-          </div>
-        `;
+        container.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs">No scheduled tasks recorded for this month.</div>`;
         return;
       }
 
@@ -1071,7 +849,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
       const filtered = tasks.filter(t => {
         if (statusFilter === 'active' && t.completed) return false;
         if (statusFilter === 'completed' && !t.completed) return false;
-
         if (selectedDateFilter && t.date !== selectedDateFilter) return false;
         if (subject !== 'all' && t.subject !== subject) return false;
         if (category !== 'all' && t.category !== category) return false;
@@ -1084,7 +861,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
                             (t.notes && t.notes.toLowerCase().includes(searchQuery));
           if (!textMatch) return false;
         }
-
         return true;
       });
 
@@ -1119,7 +895,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
 
       container.innerHTML = taskList.map(task => {
         const style = SUBJECT_STYLES[task.subject] || { color: 'bg-slate-800 text-slate-300 border-slate-700', dot: 'bg-slate-500' };
-        
         let categoryBadge = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
         if (task.category === 'exam') categoryBadge = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
         else if (task.category === 'quiz') categoryBadge = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
@@ -1137,11 +912,7 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
                class="task-card p-3.5 bg-slate-900/90 border ${task.completed ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-slate-800'} rounded-2xl transition-all duration-200 hover:border-slate-700 flex items-start space-x-3 group relative">
             
             <button onclick="event.stopPropagation(); toggleCompletion('${task.id}')" 
-                    class="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all duration-300 flex items-center justify-center active:scale-90 ${
-                      task.completed 
-                        ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-105' 
-                        : 'border-slate-600 hover:border-blue-400 bg-slate-950'
-                    }">
+                    class="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all duration-300 flex items-center justify-center active:scale-90 ${task.completed ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-105' : 'border-slate-600 hover:border-blue-400 bg-slate-950'}">
               ${task.completed ? '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>' : `<span class="w-2 h-2 rounded-full ${style.dot} opacity-60 group-hover:opacity-100"></span>`}
             </button>
 
@@ -1167,13 +938,13 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
               ${materialsCount > 0 ? `
                 <div class="mt-2 flex items-center space-x-1 text-[11px] text-amber-400 font-medium">
                   <i data-lucide="paperclip" class="w-3 h-3"></i>
-                  <span>${materialsCount} learning material${materialsCount > 1 ? 's' : ''} attached (Click/Maximize to view)</span>
+                  <span>${materialsCount} learning material${materialsCount > 1 ? 's' : ''} attached</span>
                 </div>
               ` : ''}
             </div>
 
             <div class="flex items-center space-x-1 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onclick="event.stopPropagation(); openMaxTaskModal('${task.id}')" title="Maximize Task & Materials" class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors">
+              <button onclick="event.stopPropagation(); openMaxTaskModal('${task.id}')" title="Maximize Task" class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors">
                 <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
               </button>
               <button onclick="event.stopPropagation(); openTaskModal('${task.id}')" title="Edit Task" class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors">
@@ -1183,7 +954,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
               </button>
             </div>
-
           </div>
         `;
       }).join('');
@@ -1191,7 +961,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
       lucide.createIcons();
     }
 
-    // Task Level Drag-and-Drop Handlers
     function handleTaskCardDragOver(e, taskId) {
       e.preventDefault();
       e.stopPropagation();
@@ -1213,9 +982,7 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
       if (card) card.classList.remove('drag-over-task');
 
       const files = e.dataTransfer.files;
-      if (files && files.length > 0) {
-        addFilesToTask(taskId, files);
-      }
+      if (files && files.length > 0) addFilesToTask(taskId, files);
     }
 
     function addFilesToTask(taskId, fileList) {
@@ -1234,20 +1001,16 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
             size: file.size,
             data: e.target.result
           });
-          saveTasks();
-          if (activeMaximizedTaskId === taskId) {
-            renderMaximizedTaskContent(task);
-          }
+          saveTaskToFirestore(task);
+          if (activeMaximizedTaskId === taskId) renderMaximizedTaskContent(task);
         };
         reader.readAsDataURL(file);
       });
     }
 
-    // Maximized View Controllers
     function openMaxTaskModal(taskId) {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
-
       activeMaximizedTaskId = taskId;
       renderMaximizedTaskContent(task);
       document.getElementById('max-task-modal').classList.remove('hidden');
@@ -1260,36 +1023,28 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
 
     function renderMaximizedTaskContent(task) {
       const style = SUBJECT_STYLES[task.subject] || { color: 'bg-slate-800 text-slate-300 border-slate-700', dot: 'bg-slate-500' };
-      
       let categoryBadge = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       if (task.category === 'exam') categoryBadge = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
       else if (task.category === 'quiz') categoryBadge = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      else if (task.category === 'lab') categoryBadge = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-      else if (task.category === 'event') categoryBadge = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
 
-      // Header info
       document.getElementById('max-task-badges').innerHTML = `
         <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${style.color}">${task.subject}</span>
         <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${categoryBadge}">${task.category.toUpperCase()}</span>
-        ${task.section && task.section !== 'General' ? `<span class="text-xs font-bold px-2 py-0.5 bg-slate-800 text-slate-300 rounded border border-slate-700">${task.section}</span>` : ''}
-        ${task.priority === 'high' ? '<span class="text-xs font-bold px-2 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30">HIGH PRIORITY</span>' : ''}
       `;
 
       document.getElementById('max-task-title').innerText = task.title;
       document.getElementById('max-task-meta').innerText = `Due Date: ${task.date || 'TBA'} ${task.time ? `• ${task.time}` : ''}`;
       document.getElementById('max-task-notes').innerText = task.notes || 'No detailed instructions or notes added for this task.';
 
-      // Completion Button
       const compBtn = document.getElementById('max-complete-btn');
       if (task.completed) {
-        compBtn.className = 'px-4 py-2 rounded-xl font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all';
+        compBtn.className = 'px-4 py-2 rounded-xl font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all';
         compBtn.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 inline mr-1"></i> Completed`;
       } else {
         compBtn.className = 'px-4 py-2 rounded-xl font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all';
         compBtn.innerHTML = `<i data-lucide="circle" class="w-4 h-4 inline mr-1"></i> Mark Completed`;
       }
 
-      // Materials Grid Rendering
       const materialsContainer = document.getElementById('max-task-materials');
       const materials = task.materials || [];
 
@@ -1317,18 +1072,8 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
                 </button>
               </div>
 
-              <!-- Content Preview -->
               <div class="bg-slate-950 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center min-h-[160px] max-h-[300px]">
-                ${
-                  isImage 
-                    ? `<img src="${m.data}" alt="${m.name}" class="object-contain max-h-[280px] w-full rounded-lg">`
-                    : isPDF
-                      ? `<iframe src="${m.data}" class="w-full h-[250px] rounded-lg"></iframe>`
-                      : `<div class="p-4 text-center text-xs text-slate-400 space-y-2">
-                           <i data-lucide="file" class="w-10 h-10 mx-auto text-slate-600"></i>
-                           <p>File preview unavailable for this file type.</p>
-                         </div>`
-                }
+                ${isImage ? `<img src="${m.data}" alt="${m.name}" class="object-contain max-h-[280px] w-full rounded-lg">` : isPDF ? `<iframe src="${m.data}" class="w-full h-[250px] rounded-lg"></iframe>` : `<div class="p-4 text-center text-xs text-slate-400 space-y-2"><i data-lucide="file" class="w-10 h-10 mx-auto text-slate-600"></i><p>File preview unavailable.</p></div>`}
               </div>
 
               <div class="flex items-center justify-between text-[11px] pt-1">
@@ -1342,48 +1087,31 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
           `;
         }).join('');
       }
-
       lucide.createIcons();
     }
 
     function uploadFilesToMaximizedTask(e) {
       if (!activeMaximizedTaskId) return;
       const files = e.target.files;
-      if (files && files.length > 0) {
-        addFilesToTask(activeMaximizedTaskId, files);
-      }
+      if (files && files.length > 0) addFilesToTask(activeMaximizedTaskId, files);
     }
 
-    function handleMaxDragOver(e) {
-      e.preventDefault();
-      document.getElementById('max-drop-zone').classList.add('border-blue-500');
-    }
-
-    function handleMaxDragLeave(e) {
-      e.preventDefault();
-      document.getElementById('max-drop-zone').classList.remove('border-blue-500');
-    }
-
+    function handleMaxDragOver(e) { e.preventDefault(); document.getElementById('max-drop-zone').classList.add('border-blue-500'); }
+    function handleMaxDragLeave(e) { e.preventDefault(); document.getElementById('max-drop-zone').classList.remove('border-blue-500'); }
     function handleMaxDrop(e) {
       e.preventDefault();
       document.getElementById('max-drop-zone').classList.remove('border-blue-500');
       if (!activeMaximizedTaskId) return;
-      
       const files = e.dataTransfer.files;
-      if (files && files.length > 0) {
-        addFilesToTask(activeMaximizedTaskId, files);
-      }
+      if (files && files.length > 0) addFilesToTask(activeMaximizedTaskId, files);
     }
 
     function removeMaterialFromTask(taskId, materialId) {
       const task = tasks.find(t => t.id === taskId);
       if (!task || !task.materials) return;
-
       task.materials = task.materials.filter(m => m.id !== materialId);
-      saveTasks();
-      if (activeMaximizedTaskId === taskId) {
-        renderMaximizedTaskContent(task);
-      }
+      saveTaskToFirestore(task);
+      if (activeMaximizedTaskId === taskId) renderMaximizedTaskContent(task);
     }
 
     function toggleMaximizedTaskCompletion() {
@@ -1397,17 +1125,14 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
       const task = tasks.find(t => t.id === id);
       if (task) {
         task.completed = !task.completed;
-        if (task.completed) {
-          confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
-        }
-        saveTasks();
+        if (task.completed) confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
+        saveTaskToFirestore(task);
       }
     }
 
     function deleteTask(id) {
       if (confirm('Delete this task from schedule?')) {
-        tasks = tasks.filter(t => t.id !== id);
-        saveTasks();
+        deleteTaskFromFirestore(id);
       }
     }
 
@@ -1415,7 +1140,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
       const modal = document.getElementById('task-modal');
       const modalTitle = document.getElementById('modal-title');
       const form = document.getElementById('task-form');
-
       form.reset();
       document.getElementById('form-task-id').value = '';
 
@@ -1436,23 +1160,15 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
         }
       } else {
         modalTitle.innerText = 'Add New Academic Task';
-        if (selectedDateFilter) {
-          document.getElementById('form-date').value = selectedDateFilter;
-        } else {
-          document.getElementById('form-date').value = '2026-10-15';
-        }
+        document.getElementById('form-date').value = selectedDateFilter || '2026-10-15';
       }
-
       modal.classList.remove('hidden');
     }
 
-    function closeTaskModal() {
-      document.getElementById('task-modal').classList.add('hidden');
-    }
+    function closeTaskModal() { document.getElementById('task-modal').classList.add('hidden'); }
 
     function handleFormSubmit(event) {
       event.preventDefault();
-
       const taskId = document.getElementById('form-task-id').value;
       const title = document.getElementById('form-title').value.trim();
       const subject = document.getElementById('form-subject').value.trim();
@@ -1466,7 +1182,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
       const fileInput = document.getElementById('form-files');
 
       let targetTask = null;
-
       if (taskId) {
         targetTask = tasks.find(t => t.id === taskId);
         if (targetTask) {
@@ -1483,25 +1198,18 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
       } else {
         targetTask = {
           id: 'task-' + Date.now(),
-          title,
-          subject,
-          category,
-          date,
-          time,
-          section,
-          priority,
-          notes,
+          title, subject, category, date, time, section, priority, notes,
           completed: (status === 'completed'),
           materials: []
         };
-        tasks.unshift(targetTask);
       }
 
       if (fileInput.files && fileInput.files.length > 0 && targetTask) {
         addFilesToTask(targetTask.id, fileInput.files);
+      } else {
+        saveTaskToFirestore(targetTask);
       }
 
-      saveTasks();
       populateSubjectDropdowns();
       closeTaskModal();
     }
@@ -1510,7 +1218,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
       const total = tasks.length;
       const done = tasks.filter(t => t.completed).length;
       const percent = total === 0 ? 0 : Math.round((done / total) * 100);
-
       document.getElementById('hdr-progress-text').innerText = `${percent}% (${done}/${total})`;
       document.getElementById('hdr-progress-bar').style.width = `${percent}%`;
     }
@@ -1518,7 +1225,6 @@ function renderCalendarCell(grid, day, dateStr, isCurrentMonth) {
     function checkUrgentTasks() {
       const banner = document.getElementById('urgent-banner');
       const bannerText = document.getElementById('urgent-banner-text');
-
       const upcomingExamsOrQuizzes = tasks.filter(t => !t.completed && (t.category === 'exam' || t.category === 'quiz') && t.date);
 
       if (upcomingExamsOrQuizzes.length > 0) {
