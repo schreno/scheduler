@@ -44,7 +44,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // REPLACE THIS WITH YOUR FIREBASE CONFIG FROM STEP 2
+    // REPLACE WITH YOUR FIREBASE KEYS FROM STEP 2
     const firebaseConfig = {
       apiKey: "AIzaSyBG-1Pyl_oEQi-fVN6OkM6_o89nIXOjnf8",
       authDomain: "academichub-fc0ac.firebaseapp.com",
@@ -55,6 +55,7 @@
       measurementId: "G-R11LDZB6FJ"
     };
 
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
@@ -64,10 +65,13 @@
     // Realtime Listener across iPhone & PC
     onSnapshot(collection(db, "tasks"), (snapshot) => {
       tasks = snapshot.docs.map(doc => doc.data());
+      populateSubjectDropdowns();
       renderCalendar();
       applyFilters();
       updateProgressStats();
       checkUrgentTasks();
+    }, (error) => {
+      console.error("Firestore Error:", error);
     });
   </script>
   
@@ -567,6 +571,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       populateSubjectDropdowns();
       syncMonthYearSelectors();
+      renderCalendar();
       setupGlobalDragAndDrop();
       lucide.createIcons();
 
