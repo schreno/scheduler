@@ -2,14 +2,8 @@
 <html lang="en" class="dark h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Academic Task Hub</title>
-  
-  <!-- iPhone / iOS PWA Meta Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Academic Hub">
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Task Hub — Carl Fernando</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -38,69 +32,98 @@
       }
     }
   </script>
-
-  <!-- Firebase SDK Setup -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    // REPLACE WITH YOUR FIREBASE KEYS FROM STEP 2
-    const firebaseConfig = {
-      apiKey: "AIzaSyBG-1Pyl_oEQi-fVN6OkM6_o89nIXOjnf8",
-      authDomain: "academichub-fc0ac.firebaseapp.com",
-      projectId: "academichub-fc0ac",
-      storageBucket: "academichub-fc0ac.firebasestorage.app",
-      messagingSenderId: "1018535938370",
-      appId: "1:1018535938370:web:dacd6827a2cdc37a2960db",
-      measurementId: "G-R11LDZB6FJ"
-    };
-
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    window.db = db;
-    window.fsFns = { collection, doc, setDoc, deleteDoc, onSnapshot };
-
-    // Realtime Listener across iPhone & PC
-    onSnapshot(collection(db, "tasks"), (snapshot) => {
-      tasks = snapshot.docs.map(doc => doc.data());
-      populateSubjectDropdowns();
-      renderCalendar();
-      applyFilters();
-      updateProgressStats();
-      checkUrgentTasks();
-    }, (error) => {
-      console.error("Firestore Error:", error);
-    });
-  </script>
   
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 9999px; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.3);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(156, 163, 175, 0.6);
+    }
+
     select.custom-select {
       appearance: none;
       -webkit-appearance: none;
+      -moz-appearance: none;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
       background-repeat: no-repeat;
       background-position: right 0.5rem center;
       background-size: 1rem;
       padding-right: 1.8rem !important;
     }
-    select.custom-select:focus { outline: none; }
-    @keyframes modalPopIn { 0% { opacity: 0; transform: scale(0.95) translateY(8px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
-    @keyframes dropdownFadeIn { 0% { opacity: 0; transform: translateY(-6px); } 100% { opacity: 1; transform: translateY(0); } }
+    select.custom-select:focus {
+      outline: none;
+    }
+
+    @keyframes modalPopIn {
+      0% { opacity: 0; transform: scale(0.95) translateY(8px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes dropdownFadeIn {
+      0% { opacity: 0; transform: translateY(-6px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes introZoom {
+      0% { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
     .animate-modal { animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .animate-dropdown { animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .drag-over-task { border-color: #3b82f6 !important; background-color: rgba(30, 58, 138, 0.3) !important; transform: scale(1.01); }
+    .animate-intro { animation: introZoom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+    .drag-over-task {
+      border-color: #3b82f6 !important;
+      background-color: rgba(30, 58, 138, 0.3) !important;
+      transform: scale(1.01);
+    }
   </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-100 antialiased selection:bg-blue-500 selection:text-white flex flex-col custom-scrollbar relative">
 
-  <!-- Drag Overlay for JSON Import -->
+  <!-- CINEMATIC WELCOME INTRO OVERLAY -->
+  <div id="intro-overlay" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 transition-all duration-700">
+    <div class="animate-intro max-w-md w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
+      <!-- Glow effect -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="inline-flex p-4 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl shadow-blue-500/25 mb-1">
+        <i data-lucide="terminal" class="w-8 h-8"></i>
+      </div>
+
+      <div class="space-y-2">
+        <div class="text-[10px] font-extrabold tracking-widest text-blue-400 uppercase">Engineered & Developed By</div>
+        <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Carl Fernando</h2>
+        <p class="text-xs text-slate-400">Civil Engineering • TUP Manila • Custom Task Hub</p>
+      </div>
+
+      <div class="p-3 bg-slate-950/80 rounded-2xl border border-slate-800/80 text-[11px] text-slate-300 leading-relaxed">
+        "Building elite web apps and automation systems. Real-time cloud sync active across all personal devices."
+      </div>
+
+      <button onclick="dismissIntro()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center space-x-2">
+        <span>Initialize Workspace</span>
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Drag-and-Drop Overlay for Backup Import -->
   <div id="drag-overlay" class="hidden fixed inset-0 z-50 bg-blue-950/80 backdrop-blur-md border-4 border-dashed border-blue-500 flex flex-col items-center justify-center pointer-events-none transition-all">
     <div class="p-4 bg-blue-600 text-white rounded-full shadow-2xl mb-4 animate-bounce">
       <i data-lucide="upload-cloud" class="w-12 h-12"></i>
@@ -111,17 +134,22 @@
 
   <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+      
+      <!-- Logo & Academic Year Indicator -->
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-blue-500/20">
           <i data-lucide="graduation-cap" class="w-5 h-5 sm:w-6 sm:h-6"></i>
         </div>
         <div>
           <h1 class="font-bold text-sm sm:text-lg text-white leading-tight">Academic Task Hub</h1>
-          <p class="text-[10px] sm:text-xs text-slate-400">Cloud Sync Active</p>
+          <p class="text-[10px] sm:text-xs text-slate-400">Created by Carl Fernando • Cloud Sync Active</p>
         </div>
       </div>
 
+      <!-- Action Buttons & Monthly Progress Stats -->
       <div class="flex items-center space-x-2 sm:space-x-3">
+        
+        <!-- Monthly Progress Meter -->
         <div class="hidden lg:flex items-center space-x-3 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700/60">
           <div class="text-right">
             <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Month Progress</div>
@@ -132,16 +160,19 @@
           </div>
         </div>
 
+        <!-- New Task Button -->
         <button onclick="openTaskModal()" class="flex items-center space-x-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition-all active:scale-95">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span class="hidden sm:inline">Add Task</span>
         </button>
 
+        <!-- Rules Reference Toggle -->
         <button onclick="toggleRulesModal()" class="flex items-center space-x-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 transition-all active:scale-95">
           <i data-lucide="book-open" class="w-4 h-4 text-amber-400"></i>
           <span class="hidden md:inline">Course Directives</span>
         </button>
 
+        <!-- Backup & Tools Menu -->
         <div class="relative">
           <button onclick="toggleDataMenu()" id="data-menu-btn" class="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-xl transition-all border border-slate-800 active:scale-95">
             <i data-lucide="more-vertical" class="w-5 h-5"></i>
@@ -160,10 +191,11 @@
             <div class="my-1 border-t border-slate-700/60"></div>
             <button onclick="clearAllData()" class="w-full text-left px-4 py-2 text-rose-400 hover:bg-rose-500/10 flex items-center space-x-2 transition-colors">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
-              <span>Clear All Cloud Data</span>
+              <span>Clear All Data</span>
             </button>
           </div>
         </div>
+
       </div>
     </div>
   </header>
@@ -182,9 +214,10 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <!-- Calendar View -->
+    <!-- LEFT COLUMN: CALENDAR GRID & CONTROLS -->
     <div class="lg:col-span-5 flex flex-col space-y-6">
       <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-sm">
+        
         <div class="flex items-center justify-between mb-4 gap-1">
           <div class="flex items-center space-x-1 sm:space-x-2">
             <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 transition-all active:scale-95">
@@ -250,43 +283,9 @@
           <div class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-cyan-500"></span><span>Event</span></div>
         </div>
       </div>
-
-      <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-            <i data-lucide="alert-circle" class="w-4 h-4 text-amber-400"></i>
-            <span>Course Quick Directives</span>
-          </h3>
-          <button onclick="toggleRulesModal()" class="text-[11px] text-blue-400 hover:underline">View All</button>
-        </div>
-
-        <div class="grid grid-cols-1 gap-2 text-xs">
-          <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-start space-x-2">
-            <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0"></div>
-            <div>
-              <span class="font-bold text-emerald-400">Chem Lec Protocol:</span>
-              <p class="text-slate-400 text-[11px]">Always bring ¼ yellow pad paper for unannounced quizzes!</p>
-            </div>
-          </div>
-          <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-start space-x-2">
-            <div class="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0"></div>
-            <div>
-              <span class="font-bold text-indigo-400">Shopwork Drafting Specs:</span>
-              <p class="text-slate-400 text-[11px]">Half-inch border line and 1-inch title block required.</p>
-            </div>
-          </div>
-          <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-start space-x-2">
-            <div class="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0"></div>
-            <div>
-              <span class="font-bold text-amber-400">Exam Gear:</span>
-              <p class="text-slate-400 text-[11px]">Scientific Calculator mandatory for Chem Quiz #1 & Calc Midterms.</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- Right Side Feed -->
+    <!-- RIGHT COLUMN: SEARCH, FILTERS, TASKS LIST -->
     <div class="lg:col-span-7 flex flex-col space-y-4">
       <div class="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 shadow-xl backdrop-blur-sm space-y-3">
         <div class="flex flex-col sm:flex-row gap-3">
@@ -307,6 +306,7 @@
           <select id="filter-subject" onchange="applyFilters()" class="custom-select bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-2.5 py-1.5 outline-none focus:border-blue-500 cursor-pointer transition-all">
             <option value="all">All Courses</option>
           </select>
+
           <select id="filter-category" onchange="applyFilters()" class="custom-select bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-2.5 py-1.5 outline-none focus:border-blue-500 cursor-pointer transition-all">
             <option value="all">All Categories</option>
             <option value="exam">Exams</option>
@@ -316,12 +316,14 @@
             <option value="event">Presentations / Events</option>
             <option value="tba">Pending / TBA</option>
           </select>
+
           <select id="filter-priority" onchange="applyFilters()" class="custom-select bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-2.5 py-1.5 outline-none focus:border-blue-500 cursor-pointer transition-all">
             <option value="all">All Priorities</option>
             <option value="high">High Priority</option>
             <option value="medium">Medium Priority</option>
             <option value="low">Low Priority</option>
           </select>
+
           <select id="filter-section" onchange="applyFilters()" class="custom-select bg-slate-950/90 hover:bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-xl pl-2.5 py-1.5 outline-none focus:border-blue-500 cursor-pointer transition-all">
             <option value="all">All Sections</option>
             <option value="1A">Section 1A</option>
@@ -334,7 +336,7 @@
       <div class="flex items-center justify-between px-1">
         <div>
           <h2 id="view-title" class="text-sm font-bold text-slate-200">Academic Schedule Feed</h2>
-          <p id="view-subtitle" class="text-xs text-slate-400">Real-time sync enabled</p>
+          <p id="view-subtitle" class="text-xs text-slate-400">Custom Workspace • Carl Fernando</p>
         </div>
         <span id="task-count-badge" class="px-2.5 py-1 bg-blue-500/10 text-blue-400 font-bold text-xs rounded-full border border-blue-500/20">
           0 Tasks
@@ -350,24 +352,20 @@
     <div id="task-modal-card" class="animate-modal bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <h3 id="modal-title" class="font-bold text-base text-white">Add New Academic Task</h3>
-        <button onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-200 transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <button onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-200 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
       <form id="task-form" onsubmit="handleFormSubmit(event)" class="space-y-3 text-xs">
         <input type="hidden" id="form-task-id">
         <div>
           <label class="block font-semibold text-slate-300 mb-1">Task Title / Deliverable Name *</label>
-          <input type="text" id="form-title" required placeholder="e.g. Midterm Exam, Plate #2, Lab Report" 
-                 class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none transition-all">
+          <input type="text" id="form-title" required placeholder="e.g. Midterm Exam, Plate #2, Lab Report" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Course / Subject *</label>
-            <input type="text" id="form-subject" required placeholder="e.g. Differential Calculus" list="subject-suggestions"
-                   class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none transition-all">
+            <input type="text" id="form-subject" required placeholder="e.g. Differential Calculus" list="subject-suggestions" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
             <datalist id="subject-suggestions">
               <option value="Chemistry for Engineers (Lec)">
               <option value="Differential Calculus">
@@ -384,7 +382,7 @@
 
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Category *</label>
-            <select id="form-category" required class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer transition-all">
+            <select id="form-category" required class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer">
               <option value="due">Assignment / Deliverable / Plate</option>
               <option value="quiz">Quiz / Assessment</option>
               <option value="exam">Major Exam</option>
@@ -398,15 +396,15 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Due Date</label>
-            <input type="date" id="form-date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none transition-all">
+            <input type="date" id="form-date" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
           </div>
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Time / Venue</label>
-            <input type="text" id="form-time" placeholder="e.g. 1:00 PM, Online" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none transition-all">
+            <input type="text" id="form-time" placeholder="e.g. 1:00 PM, Online" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none">
           </div>
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Section</label>
-            <select id="form-section" class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer transition-all">
+            <select id="form-section" class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer">
               <option value="1A">Section 1A</option>
               <option value="General">All / General</option>
             </select>
@@ -416,16 +414,15 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Priority</label>
-            <select id="form-priority" class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer transition-all">
+            <select id="form-priority" class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer">
               <option value="medium">Medium Priority</option>
               <option value="high">High Priority</option>
               <option value="low">Low Priority</option>
             </select>
           </div>
-
           <div>
             <label class="block font-semibold text-slate-300 mb-1">Status</label>
-            <select id="form-status" class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer transition-all">
+            <select id="form-status" class="custom-select w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl pl-3 py-2 text-slate-200 focus:border-blue-500 outline-none cursor-pointer">
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
             </select>
@@ -434,13 +431,12 @@
 
         <div>
           <label class="block font-semibold text-slate-300 mb-1">Instructions / Notes</label>
-          <textarea id="form-notes" rows="2" placeholder="Paper size, border specs, calculator rules, slide decks..." 
-                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none resize-none transition-all"></textarea>
+          <textarea id="form-notes" rows="2" placeholder="Paper size, border specs, calculator rules..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:border-blue-500 outline-none resize-none"></textarea>
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-300 mb-1">Attach Learning Materials (Images, PDFs, Word)</label>
-          <input type="file" id="form-files" multiple class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-400 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition-all cursor-pointer">
+          <label class="block font-semibold text-slate-300 mb-1">Attach Learning Materials</label>
+          <input type="file" id="form-files" multiple class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-400 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white cursor-pointer">
         </div>
 
         <div class="pt-3 flex items-center justify-end space-x-2 border-t border-slate-800">
@@ -460,9 +456,7 @@
           <h2 id="max-task-title" class="text-base sm:text-xl font-bold text-white truncate">Task Title</h2>
           <p id="max-task-meta" class="text-xs text-slate-400 flex items-center space-x-2"></p>
         </div>
-        <button onclick="closeMaxTaskModal()" class="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors shrink-0">
-          <i data-lucide="x" class="w-6 h-6"></i>
-        </button>
+        <button onclick="closeMaxTaskModal()" class="p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-xl transition-colors shrink-0"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
 
       <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar bg-slate-950/40">
@@ -477,7 +471,6 @@
               <i data-lucide="folder-open" class="w-4 h-4 text-amber-400"></i>
               <span>Attached Learning Materials</span>
             </h3>
-            
             <label class="px-3 py-1.5 bg-blue-600/20 text-blue-300 border border-blue-500/30 hover:bg-blue-600/30 text-xs font-semibold rounded-xl cursor-pointer transition-all flex items-center space-x-1">
               <i data-lucide="paperclip" class="w-3.5 h-3.5"></i>
               <span>Add File</span>
@@ -485,9 +478,8 @@
             </label>
           </div>
 
-          <div id="max-drop-zone" ondragover="handleMaxDragOver(event)" ondragleave="handleMaxDragLeave(event)" ondrop="handleMaxDrop(event)"
-               class="p-4 border-2 border-dashed border-slate-800 rounded-xl text-center text-xs text-slate-500 hover:border-blue-500/50 transition-colors">
-            Drag and drop images, PDFs, Word docs, or other files here to add them to this task.
+          <div id="max-drop-zone" ondragover="handleMaxDragOver(event)" ondragleave="handleMaxDragLeave(event)" ondrop="handleMaxDrop(event)" class="p-4 border-2 border-dashed border-slate-800 rounded-xl text-center text-xs text-slate-500 hover:border-blue-500/50 transition-colors">
+            Drag and drop images, PDFs, or docs here.
           </div>
 
           <div id="max-task-materials" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
@@ -501,7 +493,7 @@
     </div>
   </div>
 
-  <!-- RULES MODAL -->
+  <!-- COURSE DIRECTIVES MODAL -->
   <div id="rules-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity">
     <div id="rules-modal-card" class="animate-modal bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -509,34 +501,17 @@
           <i data-lucide="book-open" class="w-5 h-5 text-amber-400"></i>
           <span>Academic Directives & Syllabus Rules</span>
         </h3>
-        <button onclick="toggleRulesModal()" class="text-slate-400 hover:text-slate-200 transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <button onclick="toggleRulesModal()" class="text-slate-400 hover:text-slate-200 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
           <span class="font-bold text-emerald-400 text-sm">Chemistry for Engineers</span>
           <p class="text-slate-300"><strong>Quiz Paper:</strong> Mandatory ¼ yellow pad paper required for all unannounced quizzes.</p>
-          <p class="text-slate-400"><strong>Calculators:</strong> Scientific calculators required for Long Quiz #1 (Thermochemistry) and Midterm Exams.</p>
         </div>
-
         <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
           <span class="font-bold text-indigo-400 text-sm">Engineering Shopwork 1</span>
           <p class="text-slate-300"><strong>Drafting Standards:</strong> Half-inch (0.5") border margins and 1-inch title block on all plates.</p>
-          <p class="text-slate-400"><strong>Section 1A:</strong> Revisions Group 1, Video Presentation, and Floor Plan draft due Oct 12.</p>
-        </div>
-
-        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
-          <span class="font-bold text-purple-400 text-sm">Chemistry Laboratory</span>
-          <p class="text-slate-300"><strong>Experiment Supplies:</strong> Group items (e.g. 1x empty soda can + 1x thermometer) required on Oct 13.</p>
-          <p class="text-slate-400"><strong>Portfolio:</strong> Design cover on worksheet folder before term end.</p>
-        </div>
-
-        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1">
-          <span class="font-bold text-cyan-400 text-sm">Contemporary World & UTS</span>
-          <p class="text-slate-300"><strong>Presentations:</strong> CWLP #1 requires 3-5 minute slide presentation online.</p>
-          <p class="text-slate-400"><strong>Group Modules:</strong> GDrive submission deadlines & module answers assigned by group number.</p>
         </div>
       </div>
 
@@ -569,9 +544,12 @@
     let activeMaximizedTaskId = null;
 
     document.addEventListener('DOMContentLoaded', () => {
+      loadTasks();
       populateSubjectDropdowns();
       syncMonthYearSelectors();
       renderCalendar();
+      applyFilters();
+      checkUrgentTasks();
       setupGlobalDragAndDrop();
       lucide.createIcons();
 
@@ -584,16 +562,11 @@
       });
     });
 
-    function saveTaskToFirestore(task) {
-      if (!window.db) return;
-      const { doc, setDoc } = window.fsFns;
-      setDoc(doc(window.db, "tasks", task.id), task);
-    }
-
-    function deleteTaskFromFirestore(taskId) {
-      if (!window.db) return;
-      const { doc, deleteDoc } = window.fsFns;
-      deleteDoc(doc(window.db, "tasks", taskId));
+    function dismissIntro() {
+      const overlay = document.getElementById('intro-overlay');
+      overlay.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => overlay.remove(), 700);
+      confetti({ particleCount: 80, spread: 90, origin: { y: 0.5 } });
     }
 
     function setupGlobalDragAndDrop() {
@@ -613,65 +586,66 @@
         if (dragCounter === 0 && dragOverlay) dragOverlay.classList.add('hidden');
       });
 
-      window.addEventListener('dragover', (e) => { e.preventDefault(); });
-
+      window.addEventListener('dragover', (e) => e.preventDefault());
       window.addEventListener('drop', (e) => {
         e.preventDefault();
         dragCounter = 0;
         if (dragOverlay) dragOverlay.classList.add('hidden');
-
-        const taskCard = e.target.closest ? e.target.closest('.task-card') : null;
-        if (taskCard) return;
-
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0 && files[0].name.endsWith('.json')) {
-          processJsonFile(files[0]);
-        }
+        if (e.target.closest && e.target.closest('.task-card')) return;
+        if (e.dataTransfer.files?.[0]?.name.endsWith('.json')) processJsonFile(e.dataTransfer.files[0]);
       });
     }
 
     function processJsonFile(file) {
-      if (!file.name.endsWith('.json')) {
-        alert('Please drop a valid JSON file.');
-        return;
-      }
-
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const imported = JSON.parse(e.target.result);
           if (Array.isArray(imported)) {
-            imported.forEach(t => saveTaskToFirestore(t));
+            tasks = imported;
+            saveTasks();
+            populateSubjectDropdowns();
             confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
-            alert('Academic schedule successfully uploaded to cloud!');
+            alert('Academic schedule successfully imported!');
           }
-        } catch (err) {
-          alert('Error parsing JSON file.');
-        }
+        } catch (err) { alert('Error parsing JSON file.'); }
       };
       reader.readAsText(file);
     }
 
+    function loadTasks() {
+      const stored = localStorage.getItem('academic_planner_tasks_v3');
+      tasks = stored ? JSON.parse(stored) : [];
+    }
+
+    function saveTasks() {
+      localStorage.setItem('academic_planner_tasks_v3', JSON.stringify(tasks));
+      renderCalendar();
+      applyFilters();
+      updateProgressStats();
+      checkUrgentTasks();
+    }
+
     function clearAllData() {
-      if (confirm('Are you sure you want to clear all cloud schedule items?')) {
-        tasks.forEach(t => deleteTaskFromFirestore(t.id));
+      if (confirm('Clear all schedule items?')) {
+        tasks = [];
+        saveTasks();
+        populateSubjectDropdowns();
       }
     }
 
     function exportData() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tasks, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `academic_schedule_backup_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
+      const anchor = document.createElement('a');
+      anchor.setAttribute("href", dataStr);
+      anchor.setAttribute("download", `academic_schedule_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
     }
 
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      processJsonFile(file);
+    function importData(e) {
+      if (e.target.files[0]) processJsonFile(e.target.files[0]);
     }
 
     function toggleDataMenu() { document.getElementById('data-dropdown').classList.toggle('hidden'); }
@@ -717,8 +691,7 @@
     function setViewMode(mode) {
       currentViewMode = mode;
       ['month', 'week', 'agenda'].forEach(m => {
-        const btn = document.getElementById(`btn-view-${m}`);
-        btn.className = m === mode ? 'flex-1 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all' : 'flex-1 py-1 rounded-lg hover:text-slate-200 transition-all';
+        document.getElementById(`btn-view-${m}`).className = m === mode ? 'flex-1 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all' : 'flex-1 py-1 rounded-lg hover:text-slate-200 transition-all';
       });
       renderCalendar();
     }
@@ -726,8 +699,7 @@
     function setStatusFilter(status) {
       statusFilter = status;
       ['all', 'active', 'completed'].forEach(s => {
-        const btn = document.getElementById(`filter-status-${s}`);
-        btn.className = s === status ? 'flex-1 px-3 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all' : 'flex-1 px-3 py-1 rounded-lg hover:text-slate-200 transition-all';
+        document.getElementById(`filter-status-${s}`).className = s === status ? 'flex-1 px-3 py-1 rounded-lg bg-blue-600 text-white shadow-md transition-all' : 'flex-1 px-3 py-1 rounded-lg hover:text-slate-200 transition-all';
       });
       applyFilters();
     }
@@ -771,7 +743,7 @@
         const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
         for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-          grid.innerHTML += `<div class="h-16 sm:h-20 p-1 bg-slate-950/40 border border-slate-900/60 rounded-xl opacity-25 cursor-not-allowed"><span class="text-[10px] text-slate-500 font-bold">${daysInPrevMonth - i}</span></div>`;
+          grid.innerHTML += `<div class="h-16 sm:h-20 p-1 bg-slate-950/40 border border-slate-900/60 rounded-xl opacity-25"><span class="text-[10px] text-slate-500 font-bold">${daysInPrevMonth - i}</span></div>`;
         }
 
         for (let day = 1; day <= daysInMonth; day++) {
@@ -798,15 +770,9 @@
         dotsHTML += `<span class="w-1.5 h-1.5 rounded-full ${dotColor} ${t.completed ? 'opacity-30' : ''}"></span>`;
       });
 
-      if (dayTasks.length > 3) dotsHTML += `<span class="text-[8px] text-slate-400 font-bold">+${dayTasks.length - 3}</span>`;
-
       grid.innerHTML += `
-        <div onclick="selectCalendarDate('${dateStr}')" 
-             class="h-16 sm:h-20 p-1.5 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-95 ${!isCurrentMonth ? 'opacity-40' : ''} ${isSelected ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-500/40 shadow-lg' : hasTasks ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-slate-950/60 border-slate-900 hover:border-slate-800'}">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold ${isSelected ? 'text-blue-400' : 'text-slate-300'}">${day}</span>
-            ${dayTasks.length > 0 && dayTasks.every(t => t.completed) ? '<i data-lucide="check" class="w-3 h-3 text-emerald-400 stroke-[3]"></i>' : ''}
-          </div>
+        <div onclick="selectCalendarDate('${dateStr}')" class="h-16 sm:h-20 p-1.5 rounded-xl border transition-all duration-200 cursor-pointer flex flex-col justify-between active:scale-95 ${!isCurrentMonth ? 'opacity-40' : ''} ${isSelected ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-500/40 shadow-lg' : hasTasks ? 'bg-slate-900 border-slate-800' : 'bg-slate-950/60 border-slate-900'}">
+          <div class="flex items-center justify-between"><span class="text-xs font-bold ${isSelected ? 'text-blue-400' : 'text-slate-300'}">${day}</span></div>
           <div class="flex flex-wrap items-center gap-1 my-0.5">${dotsHTML}</div>
           <div class="text-[9px] font-semibold text-slate-500 text-right">${hasTasks ? `${dayTasks.length} task${dayTasks.length > 1 ? 's' : ''}` : ''}</div>
         </div>
@@ -816,32 +782,24 @@
     function renderAgendaView(container) {
       const monthPrefix = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}`;
       const monthTasks = tasks.filter(t => t.date && t.date.startsWith(monthPrefix)).sort((a,b) => a.date.localeCompare(b.date));
-
       if (monthTasks.length === 0) {
         container.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs">No scheduled tasks recorded for this month.</div>`;
         return;
       }
-
       container.innerHTML = monthTasks.map(t => `
-        <div onclick="selectCalendarDate('${t.date}')" class="p-2 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between cursor-pointer hover:border-slate-700 transition-colors">
-          <div class="flex items-center space-x-2">
-            <span class="text-xs font-bold text-blue-400">${t.date.slice(8)}</span>
-            <span class="text-xs font-semibold text-slate-200 truncate max-w-[180px]">${t.title}</span>
-          </div>
+        <div onclick="selectCalendarDate('${t.date}')" class="p-2 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between cursor-pointer hover:border-slate-700">
+          <div class="flex items-center space-x-2"><span class="text-xs font-bold text-blue-400">${t.date.slice(8)}</span><span class="text-xs font-semibold text-slate-200 truncate max-w-[180px]">${t.title}</span></div>
           <span class="text-[10px] px-2 py-0.5 rounded ${t.completed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'}">${t.completed ? 'Done' : 'Pending'}</span>
         </div>
       `).join('');
     }
 
     function selectCalendarDate(dateStr) {
-      if (selectedDateFilter === dateStr) {
-        clearDateFilter();
-      } else {
-        selectedDateFilter = dateStr;
-        document.getElementById('clear-date-filter').classList.remove('hidden');
-        renderCalendar();
-        applyFilters();
-      }
+      selectedDateFilter = selectedDateFilter === dateStr ? null : dateStr;
+      if (selectedDateFilter) document.getElementById('clear-date-filter').classList.remove('hidden');
+      else document.getElementById('clear-date-filter').classList.add('hidden');
+      renderCalendar();
+      applyFilters();
     }
 
     function applyFilters() {
@@ -859,13 +817,7 @@
         if (category !== 'all' && t.category !== category) return false;
         if (priority !== 'all' && (t.priority || 'medium') !== priority) return false;
         if (section !== 'all' && (t.section || 'General') !== section) return false;
-
-        if (searchQuery) {
-          const textMatch = (t.title && t.title.toLowerCase().includes(searchQuery)) || 
-                            (t.subject && t.subject.toLowerCase().includes(searchQuery)) || 
-                            (t.notes && t.notes.toLowerCase().includes(searchQuery));
-          if (!textMatch) return false;
-        }
+        if (searchQuery && !t.title.toLowerCase().includes(searchQuery) && !t.subject.toLowerCase().includes(searchQuery)) return false;
         return true;
       });
 
@@ -875,142 +827,37 @@
 
     function renderTaskList(taskList) {
       const container = document.getElementById('tasks-container');
-      const badge = document.getElementById('task-count-badge');
-      const viewTitle = document.getElementById('view-title');
-
-      badge.innerText = `${taskList.length} Task${taskList.length === 1 ? '' : 's'}`;
-
-      if (selectedDateFilter) {
-        const formatted = new Date(selectedDateFilter).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
-        viewTitle.innerText = `Deliverables for ${formatted}`;
-      } else {
-        viewTitle.innerText = `Academic Schedule Feed`;
-      }
+      document.getElementById('task-count-badge').innerText = `${taskList.length} Task${taskList.length === 1 ? '' : 's'}`;
 
       if (taskList.length === 0) {
-        container.innerHTML = `
-          <div class="flex flex-col items-center justify-center p-12 bg-slate-900/40 border border-slate-800/60 rounded-2xl text-center text-slate-500">
-            <i data-lucide="calendar-x-2" class="w-10 h-10 mb-2 stroke-1 text-slate-600"></i>
-            <p class="text-xs font-medium">No tasks found. Click 'Add Task' or drag and drop files onto a task.</p>
-          </div>
-        `;
+        container.innerHTML = `<div class="p-12 text-center text-slate-500 border border-slate-800/60 rounded-2xl text-xs">No tasks found. Click 'Add Task'.</div>`;
         lucide.createIcons();
         return;
       }
 
       container.innerHTML = taskList.map(task => {
         const style = SUBJECT_STYLES[task.subject] || { color: 'bg-slate-800 text-slate-300 border-slate-700', dot: 'bg-slate-500' };
-        let categoryBadge = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-        if (task.category === 'exam') categoryBadge = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-        else if (task.category === 'quiz') categoryBadge = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-        else if (task.category === 'lab') categoryBadge = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
-        else if (task.category === 'event') categoryBadge = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
-
-        const dateDisplay = task.date ? new Date(task.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBA';
         const materialsCount = (task.materials || []).length;
-
         return `
-          <div id="card-${task.id}" 
-               ondragover="handleTaskCardDragOver(event, '${task.id}')" 
-               ondragleave="handleTaskCardDragLeave(event, '${task.id}')" 
-               ondrop="handleTaskCardDrop(event, '${task.id}')"
-               class="task-card p-3.5 bg-slate-900/90 border ${task.completed ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-slate-800'} rounded-2xl transition-all duration-200 hover:border-slate-700 flex items-start space-x-3 group relative">
-            
-            <button onclick="event.stopPropagation(); toggleCompletion('${task.id}')" 
-                    class="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all duration-300 flex items-center justify-center active:scale-90 ${task.completed ? 'bg-emerald-500 border-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20 scale-105' : 'border-slate-600 hover:border-blue-400 bg-slate-950'}">
-              ${task.completed ? '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>' : `<span class="w-2 h-2 rounded-full ${style.dot} opacity-60 group-hover:opacity-100"></span>`}
+          <div id="card-${task.id}" class="task-card p-3.5 bg-slate-900/90 border ${task.completed ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-slate-800'} rounded-2xl flex items-start space-x-3 group relative cursor-pointer" onclick="openMaxTaskModal('${task.id}')">
+            <button onclick="event.stopPropagation(); toggleCompletion('${task.id}')" class="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center ${task.completed ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-600 bg-slate-950'}">
+              ${task.completed ? '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>' : ''}
             </button>
-
-            <div class="flex-1 min-w-0 cursor-pointer" onclick="openMaxTaskModal('${task.id}')">
+            <div class="flex-1 min-w-0">
               <div class="flex flex-wrap items-center gap-1.5 mb-1">
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${style.color}">${task.subject}</span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${categoryBadge}">${task.category.toUpperCase()}</span>
-                ${task.section && task.section !== 'General' ? `<span class="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 text-slate-300 rounded border border-slate-700">${task.section}</span>` : ''}
-                ${task.priority === 'high' ? '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30">HIGH</span>' : ''}
-                
-                <span class="text-[10px] text-slate-400 font-semibold ml-auto flex items-center space-x-1">
-                  <i data-lucide="clock" class="w-3 h-3"></i>
-                  <span>${dateDisplay} ${task.time ? `• ${task.time}` : ''}</span>
-                </span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-blue-500/10 text-blue-400 border-blue-500/20">${task.category.toUpperCase()}</span>
               </div>
-
-              <p class="text-xs sm:text-sm font-semibold transition-all ${task.completed ? 'line-through text-slate-500' : 'text-slate-100'}">
-                ${task.title}
-              </p>
-
-              ${task.notes ? `<p class="text-[11px] text-slate-400 mt-1 bg-slate-950/70 p-2 rounded-lg border border-slate-800/80 line-clamp-2">${task.notes}</p>` : ''}
-
-              ${materialsCount > 0 ? `
-                <div class="mt-2 flex items-center space-x-1 text-[11px] text-amber-400 font-medium">
-                  <i data-lucide="paperclip" class="w-3 h-3"></i>
-                  <span>${materialsCount} learning material${materialsCount > 1 ? 's' : ''} attached</span>
-                </div>
-              ` : ''}
+              <p class="text-xs sm:text-sm font-semibold ${task.completed ? 'line-through text-slate-500' : 'text-slate-100'}">${task.title}</p>
+              ${materialsCount > 0 ? `<div class="mt-2 text-[11px] text-amber-400 font-medium"><i data-lucide="paperclip" class="w-3 h-3 inline"></i> ${materialsCount} file(s) attached</div>` : ''}
             </div>
-
             <div class="flex items-center space-x-1 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onclick="event.stopPropagation(); openMaxTaskModal('${task.id}')" title="Maximize Task" class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition-colors">
-                <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
-              </button>
-              <button onclick="event.stopPropagation(); openTaskModal('${task.id}')" title="Edit Task" class="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors">
-                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-              </button>
-              <button onclick="event.stopPropagation(); deleteTask('${task.id}')" title="Delete Task" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-              </button>
+              <button onclick="event.stopPropagation(); deleteTask('${task.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
             </div>
           </div>
         `;
       }).join('');
-
       lucide.createIcons();
-    }
-
-    function handleTaskCardDragOver(e, taskId) {
-      e.preventDefault();
-      e.stopPropagation();
-      const card = document.getElementById(`card-${taskId}`);
-      if (card) card.classList.add('drag-over-task');
-    }
-
-    function handleTaskCardDragLeave(e, taskId) {
-      e.preventDefault();
-      e.stopPropagation();
-      const card = document.getElementById(`card-${taskId}`);
-      if (card) card.classList.remove('drag-over-task');
-    }
-
-    function handleTaskCardDrop(e, taskId) {
-      e.preventDefault();
-      e.stopPropagation();
-      const card = document.getElementById(`card-${taskId}`);
-      if (card) card.classList.remove('drag-over-task');
-
-      const files = e.dataTransfer.files;
-      if (files && files.length > 0) addFilesToTask(taskId, files);
-    }
-
-    function addFilesToTask(taskId, fileList) {
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-
-      if (!task.materials) task.materials = [];
-
-      Array.from(fileList).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          task.materials.push({
-            id: 'mat-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            data: e.target.result
-          });
-          saveTaskToFirestore(task);
-          if (activeMaximizedTaskId === taskId) renderMaximizedTaskContent(task);
-        };
-        reader.readAsDataURL(file);
-      });
     }
 
     function openMaxTaskModal(taskId) {
@@ -1021,109 +868,67 @@
       document.getElementById('max-task-modal').classList.remove('hidden');
     }
 
-    function closeMaxTaskModal() {
-      activeMaximizedTaskId = null;
-      document.getElementById('max-task-modal').classList.add('hidden');
-    }
+    function closeMaxTaskModal() { activeMaximizedTaskId = null; document.getElementById('max-task-modal').classList.add('hidden'); }
 
     function renderMaximizedTaskContent(task) {
-      const style = SUBJECT_STYLES[task.subject] || { color: 'bg-slate-800 text-slate-300 border-slate-700', dot: 'bg-slate-500' };
-      let categoryBadge = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      if (task.category === 'exam') categoryBadge = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      else if (task.category === 'quiz') categoryBadge = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-
-      document.getElementById('max-task-badges').innerHTML = `
-        <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${style.color}">${task.subject}</span>
-        <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${categoryBadge}">${task.category.toUpperCase()}</span>
-      `;
-
       document.getElementById('max-task-title').innerText = task.title;
-      document.getElementById('max-task-meta').innerText = `Due Date: ${task.date || 'TBA'} ${task.time ? `• ${task.time}` : ''}`;
-      document.getElementById('max-task-notes').innerText = task.notes || 'No detailed instructions or notes added for this task.';
-
+      document.getElementById('max-task-notes').innerText = task.notes || 'No notes provided.';
+      
       const compBtn = document.getElementById('max-complete-btn');
-      if (task.completed) {
-        compBtn.className = 'px-4 py-2 rounded-xl font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all';
-        compBtn.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4 inline mr-1"></i> Completed`;
-      } else {
-        compBtn.className = 'px-4 py-2 rounded-xl font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all';
-        compBtn.innerHTML = `<i data-lucide="circle" class="w-4 h-4 inline mr-1"></i> Mark Completed`;
-      }
+      compBtn.className = task.completed ? 'px-4 py-2 rounded-xl font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'px-4 py-2 rounded-xl font-bold bg-slate-800 text-slate-300';
+      compBtn.innerHTML = task.completed ? 'Completed' : 'Mark Completed';
 
-      const materialsContainer = document.getElementById('max-task-materials');
+      const container = document.getElementById('max-task-materials');
       const materials = task.materials || [];
-
       if (materials.length === 0) {
-        materialsContainer.innerHTML = `
-          <div class="col-span-full p-8 text-center text-slate-500 border border-slate-800 rounded-xl">
-            <i data-lucide="file-x" class="w-8 h-8 mx-auto mb-2 text-slate-600"></i>
-            <p class="text-xs">No learning materials attached yet.</p>
-          </div>
-        `;
+        container.innerHTML = `<div class="col-span-full p-8 text-center text-slate-500 border border-slate-800 rounded-xl text-xs">No files attached yet.</div>`;
       } else {
-        materialsContainer.innerHTML = materials.map((m) => {
-          const isImage = m.type.startsWith('image/');
-          const isPDF = m.type === 'application/pdf';
-
-          return `
-            <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2 flex flex-col justify-between">
-              <div class="flex items-start justify-between">
-                <div class="flex items-center space-x-2 min-w-0 pr-2">
-                  <i data-lucide="${isImage ? 'image' : isPDF ? 'file-text' : 'file'}" class="w-5 h-5 text-blue-400 shrink-0"></i>
-                  <span class="text-xs font-semibold text-slate-200 truncate" title="${m.name}">${m.name}</span>
-                </div>
-                <button onclick="removeMaterialFromTask('${task.id}', '${m.id}')" class="text-slate-500 hover:text-rose-400 transition-colors">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              </div>
-
-              <div class="bg-slate-950 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center min-h-[160px] max-h-[300px]">
-                ${isImage ? `<img src="${m.data}" alt="${m.name}" class="object-contain max-h-[280px] w-full rounded-lg">` : isPDF ? `<iframe src="${m.data}" class="w-full h-[250px] rounded-lg"></iframe>` : `<div class="p-4 text-center text-xs text-slate-400 space-y-2"><i data-lucide="file" class="w-10 h-10 mx-auto text-slate-600"></i><p>File preview unavailable.</p></div>`}
-              </div>
-
-              <div class="flex items-center justify-between text-[11px] pt-1">
-                <span class="text-slate-500">${(m.size / 1024).toFixed(1)} KB</span>
-                <a href="${m.data}" download="${m.name}" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-blue-400 font-semibold rounded-lg border border-slate-700 transition-all flex items-center space-x-1">
-                  <i data-lucide="download" class="w-3 h-3"></i>
-                  <span>Download File</span>
-                </a>
-              </div>
+        container.innerHTML = materials.map(m => `
+          <div class="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2 flex flex-col justify-between">
+            <div class="flex items-start justify-between">
+              <span class="text-xs font-semibold text-slate-200 truncate">${m.name}</span>
+              <button onclick="removeMaterialFromTask('${task.id}', '${m.id}')" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
-          `;
-        }).join('');
+            <div class="bg-slate-950 rounded-lg p-2 flex items-center justify-center min-h-[120px]">
+              ${m.type.startsWith('image/') ? `<img src="${m.data}" class="object-contain max-h-[220px] rounded-lg">` : `<a href="${m.data}" download="${m.name}" class="text-blue-400 text-xs underline">Download File</a>`}
+            </div>
+          </div>
+        `).join('');
       }
       lucide.createIcons();
     }
 
-    function uploadFilesToMaximizedTask(e) {
-      if (!activeMaximizedTaskId) return;
-      const files = e.target.files;
-      if (files && files.length > 0) addFilesToTask(activeMaximizedTaskId, files);
+    function addFilesToTask(taskId, fileList) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      if (!task.materials) task.materials = [];
+      Array.from(fileList).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          task.materials.push({ id: 'mat-' + Date.now(), name: file.name, type: file.type, size: file.size, data: e.target.result });
+          saveTasks();
+          if (activeMaximizedTaskId === taskId) renderMaximizedTaskContent(task);
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
-    function handleMaxDragOver(e) { e.preventDefault(); document.getElementById('max-drop-zone').classList.add('border-blue-500'); }
-    function handleMaxDragLeave(e) { e.preventDefault(); document.getElementById('max-drop-zone').classList.remove('border-blue-500'); }
-    function handleMaxDrop(e) {
-      e.preventDefault();
-      document.getElementById('max-drop-zone').classList.remove('border-blue-500');
-      if (!activeMaximizedTaskId) return;
-      const files = e.dataTransfer.files;
-      if (files && files.length > 0) addFilesToTask(activeMaximizedTaskId, files);
+    function uploadFilesToMaximizedTask(e) {
+      if (activeMaximizedTaskId && e.target.files.length > 0) addFilesToTask(activeMaximizedTaskId, e.target.files);
     }
 
     function removeMaterialFromTask(taskId, materialId) {
       const task = tasks.find(t => t.id === taskId);
       if (!task || !task.materials) return;
       task.materials = task.materials.filter(m => m.id !== materialId);
-      saveTaskToFirestore(task);
+      saveTasks();
       if (activeMaximizedTaskId === taskId) renderMaximizedTaskContent(task);
     }
 
     function toggleMaximizedTaskCompletion() {
       if (!activeMaximizedTaskId) return;
       toggleCompletion(activeMaximizedTaskId);
-      const task = tasks.find(t => t.id === activeMaximizedTaskId);
-      if (task) renderMaximizedTaskContent(task);
+      renderMaximizedTaskContent(tasks.find(t => t.id === activeMaximizedTaskId));
     }
 
     function toggleCompletion(id) {
@@ -1131,115 +936,58 @@
       if (task) {
         task.completed = !task.completed;
         if (task.completed) confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
-        saveTaskToFirestore(task);
+        saveTasks();
       }
     }
 
     function deleteTask(id) {
-      if (confirm('Delete this task from schedule?')) {
-        deleteTaskFromFirestore(id);
+      if (confirm('Delete this task?')) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveTasks();
       }
     }
 
-    function openTaskModal(taskId = null) {
-      const modal = document.getElementById('task-modal');
-      const modalTitle = document.getElementById('modal-title');
-      const form = document.getElementById('task-form');
-      form.reset();
-      document.getElementById('form-task-id').value = '';
-
-      if (taskId) {
-        const task = tasks.find(t => t.id === taskId);
-        if (task) {
-          modalTitle.innerText = 'Edit Academic Task';
-          document.getElementById('form-task-id').value = task.id;
-          document.getElementById('form-title').value = task.title;
-          document.getElementById('form-subject').value = task.subject;
-          document.getElementById('form-category').value = task.category;
-          document.getElementById('form-date').value = task.date || '';
-          document.getElementById('form-time').value = task.time || '';
-          document.getElementById('form-section').value = task.section || 'General';
-          document.getElementById('form-priority').value = task.priority || 'medium';
-          document.getElementById('form-status').value = task.completed ? 'completed' : 'pending';
-          document.getElementById('form-notes').value = task.notes || '';
-        }
-      } else {
-        modalTitle.innerText = 'Add New Academic Task';
-        document.getElementById('form-date').value = selectedDateFilter || '2026-10-15';
-      }
-      modal.classList.remove('hidden');
-    }
-
+    function openTaskModal() { document.getElementById('task-modal').classList.remove('hidden'); }
     function closeTaskModal() { document.getElementById('task-modal').classList.add('hidden'); }
 
     function handleFormSubmit(event) {
       event.preventDefault();
-      const taskId = document.getElementById('form-task-id').value;
-      const title = document.getElementById('form-title').value.trim();
-      const subject = document.getElementById('form-subject').value.trim();
-      const category = document.getElementById('form-category').value;
-      const date = document.getElementById('form-date').value;
-      const time = document.getElementById('form-time').value.trim();
-      const section = document.getElementById('form-section').value;
-      const priority = document.getElementById('form-priority').value;
-      const status = document.getElementById('form-status').value;
-      const notes = document.getElementById('form-notes').value.trim();
+      const newTask = {
+        id: 'task-' + Date.now(),
+        title: document.getElementById('form-title').value.trim(),
+        subject: document.getElementById('form-subject').value.trim(),
+        category: document.getElementById('form-category').value,
+        date: document.getElementById('form-date').value,
+        time: document.getElementById('form-time').value.trim(),
+        section: document.getElementById('form-section').value,
+        priority: document.getElementById('form-priority').value,
+        notes: document.getElementById('form-notes').value.trim(),
+        completed: document.getElementById('form-status').value === 'completed',
+        materials: []
+      };
+
       const fileInput = document.getElementById('form-files');
-
-      let targetTask = null;
-      if (taskId) {
-        targetTask = tasks.find(t => t.id === taskId);
-        if (targetTask) {
-          targetTask.title = title;
-          targetTask.subject = subject;
-          targetTask.category = category;
-          targetTask.date = date;
-          targetTask.time = time;
-          targetTask.section = section;
-          targetTask.priority = priority;
-          targetTask.completed = (status === 'completed');
-          targetTask.notes = notes;
-        }
-      } else {
-        targetTask = {
-          id: 'task-' + Date.now(),
-          title, subject, category, date, time, section, priority, notes,
-          completed: (status === 'completed'),
-          materials: []
-        };
-      }
-
-      if (fileInput.files && fileInput.files.length > 0 && targetTask) {
-        addFilesToTask(targetTask.id, fileInput.files);
-      } else {
-        saveTaskToFirestore(targetTask);
-      }
-
+      tasks.unshift(newTask);
+      if (fileInput.files.length > 0) addFilesToTask(newTask.id, fileInput.files);
+      saveTasks();
       populateSubjectDropdowns();
       closeTaskModal();
     }
 
     function updateProgressStats() {
-      const total = tasks.length;
-      const done = tasks.filter(t => t.completed).length;
+      const total = tasks.length, done = tasks.filter(t => t.completed).length;
       const percent = total === 0 ? 0 : Math.round((done / total) * 100);
       document.getElementById('hdr-progress-text').innerText = `${percent}% (${done}/${total})`;
       document.getElementById('hdr-progress-bar').style.width = `${percent}%`;
     }
 
     function checkUrgentTasks() {
+      const upcoming = tasks.filter(t => !t.completed && (t.category === 'exam' || t.category === 'quiz') && t.date).sort((a,b) => a.date.localeCompare(b.date));
       const banner = document.getElementById('urgent-banner');
-      const bannerText = document.getElementById('urgent-banner-text');
-      const upcomingExamsOrQuizzes = tasks.filter(t => !t.completed && (t.category === 'exam' || t.category === 'quiz') && t.date);
-
-      if (upcomingExamsOrQuizzes.length > 0) {
-        const sorted = upcomingExamsOrQuizzes.sort((a,b) => a.date.localeCompare(b.date));
-        const urgent = sorted[0];
-        const formatted = new Date(urgent.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        bannerText.innerHTML = `<strong>URGENT ASSIGNMENT/EXAM:</strong> ${urgent.subject} — ${urgent.title} (${formatted})`;
-        banner.classList.remove('hidden');
+      if (upcoming.length > 0) {
+        banner?.classList.remove('hidden');
       } else {
-        banner.classList.add('hidden');
+        banner?.classList.add('hidden');
       }
     }
   </script>
